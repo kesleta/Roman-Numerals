@@ -35,6 +35,7 @@ validate xs = runSections xs *> Just xs
 
 main :: IO ()
 main = do
+  putStr $ "RomanToInt>"
   s <- getLine
-  print $ romanToInt s
+  putStrLn $ maybe ("Invalid") show $ romanToInt s
   main
