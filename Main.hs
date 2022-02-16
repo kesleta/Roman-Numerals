@@ -1,26 +1,14 @@
-{-# LANGUAGE LambdaCase #-}
 module Main where
 import           Control.Monad                  ( (<=<)
                                                 , join
                                                 , mfilter
                                                 )
-import qualified Data.Bifunctor
 import           Data.List                      ( group
                                                 , nub
                                                 , sort
                                                 )
 import           Parser                         ( runSections )
 import           Sample                         ( sample )
-
-
-apply :: [(String, Int)] -> [Bool]
-apply =
-  fmap
-    $ (\case
-        (Nothing, _) -> False
-        (Just x , y) -> (x == y)
-      )
-    . Data.Bifunctor.first romanToInt
 
 charToNum :: Char -> Maybe Int
 charToNum 'M' = Just 1000
