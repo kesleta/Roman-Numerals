@@ -1,4 +1,6 @@
-module RomanToInt (romanToInt) where
+module RomanToInt
+  ( romanToInt
+  ) where
 import           Control.Monad                  ( (<=<)
                                                 , join
                                                 , mfilter

@@ -1,4 +1,10 @@
-module IntToRoman (intToRoman) where
+module IntToRoman
+  ( intToRoman
+  ) where
+import           Control.Monad                  ( (<=<)
+                                                , (>=>)
+                                                )
+import           Validate
 
 numToChar :: Int -> Maybe Char
 numToChar 1000 = Just 'M'
@@ -11,21 +17,33 @@ numToChar 1    = Just 'I'
 numToChar _    = Nothing
 
 intToRoman :: Int -> Maybe String
-intToRoman = mapM numToChar . concat . reverse . (zipWith ($) [fmap ((10^n)*) | n <- [0..]]) .  fmap romanForm . expand'
-  where
-    expand' :: Int -> [Int]
-    expand' 0 = []
-    expand' n = (n `mod` 10) : (expand' $ div n 10)
+intToRoman =
+  mapM romanForm
+    .   expand'
+    >=> (mapM numToChar . concat . reverse . zipWith
+          ($)
+          [ fmap ((10 ^ n) *) | n <- [0 ..] ]
+        )
 
-    romanForm :: Int -> [Int]
-    romanForm 0  = []
-    romanForm 1  = [1]
-    romanForm 2  = [1, 1]
-    romanForm 3  = [1, 1, 1]
-    romanForm 4  = [1, 5]
-    romanForm 5  = [5]
-    romanForm 6  = [5, 1]
-    romanForm 7  = [5, 1, 1]
-    romanForm 8  = [5, 1, 1, 1]
-    romanForm 9  = [1, 10]
-    romanForm 10 = [10]
+
+ where
+  expand' :: Int -> [Int]
+  expand' 0 = []
+  expand' n = (n `mod` 10) : expand' (div n 10)
+
+  romanForm :: Int -> Maybe [Int]
+  romanForm 0  = Just []
+  romanForm 1  = Just [1]
+  romanForm 2  = Just [1, 1]
+  romanForm 3  = Just [1, 1, 1]
+  romanForm 4  = Just [1, 5]
+  romanForm 5  = Just [5]
+  romanForm 6  = Just [5, 1]
+  romanForm 7  = Just [5, 1, 1]
+  romanForm 8  = Just [5, 1, 1, 1]
+  romanForm 9  = Just [1, 10]
+  romanForm 10 = Just [10]
+  romanForm _  = Nothing
+
+inRange :: Ord a => a -> a -> a -> Validate [String] a
+inRange min max = fromPred ["Value not in range"] (\n -> min < n && n > max)

@@ -8,14 +8,14 @@ import           Data.List                      ( group
                                                 , nub
                                                 , sort
                                                 )
+import           IntToRoman                     ( intToRoman )
 import           Parser                         ( runSections )
+import           RomanToInt                     ( romanToInt )
 import           Sample                         ( sample )
-import           RomanToInt                     (romanToInt)
-import           IntToRoman                     (intToRoman)
 
 main :: IO ()
 main = do
-  putStr $ "Input Roman: "
+  putStr "Input Roman: "
   s <- getLine
-  putStrLn $ maybe ("Invalid") show $ romanToInt s
+  putStrLn $ maybe "Invalid" show $ romanToInt s
   main
