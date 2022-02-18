@@ -19,16 +19,13 @@ numToChar c    = Failure [show c ++ " has no numeral"]
 
 intToRoman :: Int -> Validate [String] String
 intToRoman =
-  (mapM numToChar . concat . reverse)
-    <=< (traverse (romanForm . (`mod` 10)) . expand)
+  mapM numToChar . concat . reverse
+    <=< fmap (zipWith (<$>) [ (*(10 ^ x)) | x <- [0..]]) . traverse romanForm . expand
     <=< inRange 0 4000
 
 romanForm :: Int -> Validate [String] [Int]
-romanForm n = form n
- where
-form :: Int -> Validate [String] [Int]
-form 0 = Success []
-form x = case x of
+romanForm 0 = Success []
+romanForm x = case x of
   1  -> Success [1]
   2  -> Success [1, 1]
   3  -> Success [1, 1, 1]
@@ -42,12 +39,13 @@ form x = case x of
   _  -> Failure ["L + Ratio Bozo"]
 
 expand :: Int -> [Int]
-expand = reverse . zipWith ($) [ (* (10 ^ x)) | x <- [0 ..] ] . expand'
+expand = expand'
  where
   expand' :: Int -> [Int]
   expand' 0 = []
   expand' n = (n `mod` 10) : expand' (div n 10)
 
 inRange :: Ord a => a -> a -> a -> Validate [String] a
-inRange min max = fromPred ["Value not in range"] (\n -> min < n && n > max)
+inRange min max = fromPred ["Value not in range"] (\n -> (min < n) && (n < max))
 --fmap ((10 ^ floor (logBase 10 (int2Float n))) *)
+--zipWith (const id) [ 10 ^ x | x <- [0 ..] ] .

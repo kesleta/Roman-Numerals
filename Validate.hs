@@ -1,4 +1,5 @@
 module Validate where
+import Data.Semigroup
 
 data Validate err a = Failure err | Success a deriving (Show, Eq)
 
