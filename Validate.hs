@@ -13,6 +13,11 @@ instance Semigroup err => Applicative (Validate err) where
   _           <*> (Failure a) = Failure a
   (Success f) <*> (Success a) = Success (f a)
 
+instance Semigroup err => Monad (Validate err) where
+  return = Success
+  (Success a  ) >>= f = f a
+  (Failure err) >>= _ = Failure err
+
 toMaybe :: Validate err a -> Maybe a
 toMaybe (Failure _) = Nothing
 toMaybe (Success a) = Just a
@@ -30,6 +35,5 @@ fromEither (Left  err) = Failure err
 fromEither (Right a  ) = Success a
 
 fromPred :: err -> (a -> Bool) -> a -> Validate err a
-fromPred err p a
-  | p a = Success a
-  | otherwise = Failure err
+fromPred err p a | p a       = Success a
+                 | otherwise = Failure err

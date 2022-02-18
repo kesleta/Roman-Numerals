@@ -4,46 +4,50 @@ module IntToRoman
 import           Control.Monad                  ( (<=<)
                                                 , (>=>)
                                                 )
+import           GHC.Float                      ( int2Float )
 import           Validate
 
-numToChar :: Int -> Maybe Char
-numToChar 1000 = Just 'M'
-numToChar 500  = Just 'D'
-numToChar 100  = Just 'C'
-numToChar 50   = Just 'L'
-numToChar 10   = Just 'X'
-numToChar 5    = Just 'V'
-numToChar 1    = Just 'I'
-numToChar _    = Nothing
+numToChar :: Int -> Validate [String] Char
+numToChar 1000 = Success 'M'
+numToChar 500  = Success 'D'
+numToChar 100  = Success 'C'
+numToChar 50   = Success 'L'
+numToChar 10   = Success 'X'
+numToChar 5    = Success 'V'
+numToChar 1    = Success 'I'
+numToChar c    = Failure [show c ++ " has no numeral"]
 
-intToRoman :: Int -> Maybe String
+intToRoman :: Int -> Validate [String] String
 intToRoman =
-  mapM romanForm
-    .   expand'
-    >=> (mapM numToChar . concat . reverse . zipWith
-          ($)
-          [ fmap ((10 ^ n) *) | n <- [0 ..] ]
-        )
+  (mapM numToChar . concat . reverse)
+    <=< (traverse (romanForm . (`mod` 10)) . expand)
+    <=< inRange 0 4000
 
+romanForm :: Int -> Validate [String] [Int]
+romanForm n = form n
+ where
+form :: Int -> Validate [String] [Int]
+form 0 = Success []
+form x = case x of
+  1  -> Success [1]
+  2  -> Success [1, 1]
+  3  -> Success [1, 1, 1]
+  4  -> Success [1, 5]
+  5  -> Success [5]
+  6  -> Success [5, 1]
+  7  -> Success [5, 1, 1]
+  8  -> Success [5, 1, 1, 1]
+  9  -> Success [1, 10]
+  10 -> Success [10]
+  _  -> Failure ["L + Ratio Bozo"]
 
+expand :: Int -> [Int]
+expand = reverse . zipWith ($) [ (* (10 ^ x)) | x <- [0 ..] ] . expand'
  where
   expand' :: Int -> [Int]
   expand' 0 = []
   expand' n = (n `mod` 10) : expand' (div n 10)
 
-  romanForm :: Int -> Maybe [Int]
-  romanForm 0  = Just []
-  romanForm 1  = Just [1]
-  romanForm 2  = Just [1, 1]
-  romanForm 3  = Just [1, 1, 1]
-  romanForm 4  = Just [1, 5]
-  romanForm 5  = Just [5]
-  romanForm 6  = Just [5, 1]
-  romanForm 7  = Just [5, 1, 1]
-  romanForm 8  = Just [5, 1, 1, 1]
-  romanForm 9  = Just [1, 10]
-  romanForm 10 = Just [10]
-  romanForm _  = Nothing
-
 inRange :: Ord a => a -> a -> a -> Validate [String] a
 inRange min max = fromPred ["Value not in range"] (\n -> min < n && n > max)
+--fmap ((10 ^ floor (logBase 10 (int2Float n))) *)
