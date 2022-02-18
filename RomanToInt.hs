@@ -11,26 +11,27 @@ import           Data.List                      ( group
                                                 )
 import           Parser                         ( runSections )
 import           Sample                         ( sample )
+import           Validate
 
-charToNum :: Char -> Maybe Int
-charToNum 'M' = Just 1000
-charToNum 'D' = Just 500
-charToNum 'C' = Just 100
-charToNum 'L' = Just 50
-charToNum 'X' = Just 10
-charToNum 'V' = Just 5
-charToNum 'I' = Just 1
-charToNum _   = Nothing
+charToNum :: Char -> Validate [String] Int
+charToNum 'M' = Success 1000
+charToNum 'D' = Success 500
+charToNum 'C' = Success 100
+charToNum 'L' = Success 50
+charToNum 'X' = Success 10
+charToNum 'V' = Success 5
+charToNum 'I' = Success 1
+charToNum _   = Failure ["Invalid Charecter"]
 
-romanToInt :: String -> Maybe Int
+romanToInt :: String -> Validate [String] Int
 romanToInt =
   fmap (foldr1 (\a b -> if a >= b then a + b else b - a) . sumCon)
-    .   validate
+    .   valid
     <=< mapM charToNum
 
 sumCon :: [Int] -> [Int]
 sumCon []       = []
 sumCon (x : xs) = sum (takeWhile (== x) xs) + x : sumCon (dropWhile (== x) xs)
 
-validate :: [Int] -> Maybe [Int]
-validate xs = runSections xs *> Just xs
+valid :: [Int] -> Validate [String] [Int]
+valid xs = runSections xs *> Success xs

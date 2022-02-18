@@ -24,8 +24,8 @@ intToRoman =
     <=< inRange 0 4000
 
 romanForm :: Int -> Validate [String] [Int]
-romanForm 0 = Success []
 romanForm x = case x of
+  0  -> Success []
   1  -> Success [1]
   2  -> Success [1, 1]
   3  -> Success [1, 1, 1]

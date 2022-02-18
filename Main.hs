@@ -12,10 +12,13 @@ import           IntToRoman                     ( intToRoman )
 import           Parser                         ( runSections )
 import           RomanToInt                     ( romanToInt )
 import           Sample                         ( sample )
+import           Validate
+
+f = validate
 
 main :: IO ()
 main = do
   putStr "Input Roman: "
   s <- getLine
-  putStrLn $ maybe "Invalid" show $ romanToInt s
+  putStrLn $ validate show show (romanToInt s)
   main

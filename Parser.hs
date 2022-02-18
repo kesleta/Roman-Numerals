@@ -1,5 +1,5 @@
 {-# LANGUAGE LambdaCase #-}
-module Parser where
+module Parser (Parser(..), runSections) where
 import           Control.Applicative            ( Alternative
                                                   ( (<|>)
                                                   , empty
@@ -10,8 +10,9 @@ import           Control.Monad                  ( MonadPlus(..)
                                                 , void
                                                 )
 import           Data.List                      ( group )
+import           Validate
 
-newtype Parser c a = Parser { runParser :: [c] -> Maybe (a, [c])}
+newtype Parser c a = Parser { runParser :: [c] -> Validate [String] (a, [c])}
 
 instance Functor (Parser c) where
   fmap f (Parser p) = Parser $ \s -> do
@@ -19,7 +20,7 @@ instance Functor (Parser c) where
     return (f x, s')
 
 instance Applicative (Parser c) where
-  pure a = Parser $ \s -> Just (a, s)
+  pure a = Parser $ \s -> Success (a, s)
   (Parser f) <*> (Parser x) = Parser $ \s -> do
     (f', s' ) <- f s
     (x', s'') <- x s'
@@ -32,7 +33,7 @@ instance Monad (Parser c) where
     runParser (f x) s'
 
 instance Alternative (Parser c) where
-  empty = Parser $ const Nothing
+  empty = Parser $ const empty
   (Parser a) <|> (Parser b) = Parser $ \s -> a s <|> b s
 
 instance MonadPlus (Parser c) where
@@ -41,24 +42,24 @@ instance MonadPlus (Parser c) where
 
 first :: Parser c c
 first = Parser $ \case
-  (x : xs) -> Just (x, x : xs)
-  []       -> Nothing
+  (x : xs) -> Success (x, x : xs)
+  []       -> Failure ["Empty List"]
 
 charP :: Eq c => c -> Parser c c
 charP c = Parser $ \case
-  (x : xs) | x == c    -> Just (c, xs)
-           | otherwise -> Nothing
-  [] -> Nothing
+  (x : xs) | x == c    -> Success (c, xs)
+           | otherwise -> Failure ["Charecter does not match"]
+  [] -> Failure ["Empty List"]
 
 complete :: Parser c a -> Parser c a
 complete (Parser p) = Parser $ \s -> do
   (x, s') <- p s
-  if null s' then Just (x, s') else Nothing
+  if null s' then Success (x, s') else Failure ["Did not fully consume input"]
 
 noQuad :: Parser Int ()
 noQuad = Parser $ \case
-  [] -> Nothing
-  s  -> if (< 4) $ maximum $ length <$> group s then Just ((), s) else Nothing
+  [] -> Failure ["Empty List"]
+  s  -> if (< 4) $ maximum $ length <$> group s then Success ((), s) else Failure ["More than 3 consecutive elements"]
 
 i :: Int -> Parser Int ()
 i n = void $ many (charP n)
@@ -84,12 +85,12 @@ sections = complete $ noQuad *> firstTen >>= sections'
 
 firstTen :: Parser Int Int
 firstTen = Parser $ \case
-  (x : xs) -> if f x then Just (x, x : xs) else Just (div x 5, x : xs)
-  []       -> Nothing
+  (x : xs) -> if f x then Success (x, x : xs) else Success (div x 5, x : xs)
+  []       -> Failure ["Empty List"]
  where
   f :: Int -> Bool
   f n | n <= 0    = False
       | otherwise = (/= 5) $ read $ return $ head $ show n
 
-runSections :: [Int] -> Maybe ()
+runSections :: [Int] -> Validate [String] ()
 runSections = void . runParser sections
